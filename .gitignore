@@ -1,0 +1,17 @@
+*.iml
+.gradle/
+/local.properties
+.idea/
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+app/build/
+META-INF/
+*.apk
+widget-preview.html
+widget_screenshot.png
+AI协作控制规范.md
+用户偏好画像.md

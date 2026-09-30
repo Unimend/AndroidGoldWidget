@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">黄金小组件</string>
+    <string name="widget_chart_name">黄金走势图</string>
+    <string name="widget_chart_desc">国际金价走势折线图</string>
+</resources>
