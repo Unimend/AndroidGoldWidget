@@ -120,20 +120,27 @@ class GoldRefreshService : Service() {
                 )
             )
 
-            // 生成折线图 bitmap 并缓存到文件（只画国际金价单线，更清晰）
+            // 生成折线图 bitmap（深色极客版 + 浅色版各一套）
             val chartBitmap = GoldChartRenderer.render(history.load(), CHART_WIDTH, CHART_HEIGHT)
             saveChartBitmap(context, chartBitmap)
+            val lightBitmap = GoldChartRenderer.renderLight(history.load(), CHART_WIDTH, CHART_HEIGHT)
+            saveLightChartBitmap(context, lightBitmap)
 
-            // 更新组合组件的价格 state
+            // 更新两个组件的价格 state（tick +1 用于闪烁相位）
             val manager = GlanceAppWidgetManager(context)
-            manager.getGlanceIds(GoldChartWidget::class.java).forEach { glanceId ->
-                updateAppWidgetState(context, glanceId) { prefs ->
-                    prefs[priceKey] = price.toJson()
+            val allWidgets = listOf(GoldChartWidget::class.java, GoldLightWidget::class.java)
+            allWidgets.forEach { widgetClass ->
+                manager.getGlanceIds(widgetClass).forEach { glanceId ->
+                    updateAppWidgetState(context, glanceId) { prefs ->
+                        val prevTick = GoldPrice.fromJson(prefs[priceKey]).tick
+                        prefs[priceKey] = price.copy(tick = prevTick + 1).toJson()
+                    }
                 }
             }
 
-            // 触发组件 UI 重建
+            // 触发两个组件的 UI 重建
             GoldChartWidget.updateAll(context)
+            GoldLightWidget.updateAll(context)
             return true
         }
 
@@ -145,6 +152,10 @@ class GoldRefreshService : Service() {
         fun chartFilePath(context: Context): java.io.File =
             java.io.File(context.filesDir, "gold_chart.png")
 
+        /** 浅色版折线图 bitmap 的缓存文件路径 */
+        fun lightChartFilePath(context: Context): java.io.File =
+            java.io.File(context.filesDir, "gold_chart_light.png")
+
         private fun saveChartBitmap(context: Context, bitmap: android.graphics.Bitmap) {
             try {
                 val file = chartFilePath(context)
@@ -153,6 +164,17 @@ class GoldRefreshService : Service() {
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "保存折线图失败", e)
+            }
+        }
+
+        private fun saveLightChartBitmap(context: Context, bitmap: android.graphics.Bitmap) {
+            try {
+                val file = lightChartFilePath(context)
+                java.io.FileOutputStream(file).use { out ->
+                    bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "保存浅色折线图失败", e)
             }
         }
     }

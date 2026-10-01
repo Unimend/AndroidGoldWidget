@@ -12,6 +12,7 @@ app/build/
 META-INF/
 *.apk
 widget-preview.html
+geek-preview.html
 widget_screenshot.png
 AI协作控制规范.md
 用户偏好画像.md

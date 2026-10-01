@@ -1,5 +1,7 @@
 <resources>
     <string name="app_name">黄金小组件</string>
     <string name="widget_chart_name">黄金走势图</string>
-    <string name="widget_chart_desc">国际金价走势折线图</string>
+    <string name="widget_chart_desc">极客风终端数据仪表</string>
+    <string name="widget_light_name">黄金浅色版</string>
+    <string name="widget_light_desc">浅色半透明毛玻璃风格</string>
 </resources>

@@ -3,6 +3,7 @@ package com.unimend.goldwidget
 import android.content.Context
 import android.graphics.BitmapFactory
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -35,102 +36,108 @@ import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 
 /**
- * 黄金实时价格组合组件（复刻 UIMaker 苹果风设计稿）。
+ * 极客风终端数据仪表组件（Terminal Data Readout）。
  *
  * 结构：
- *   ┌─ 大底（深绿黑 #111612，圆角22）─────────────┐
- *   │  标题「实时黄金价格」（金色 15 粗体）         │
- *   │  ┌国际金价格(纯黑)┐  ┌国内金价格(纯黑)┐       │
- *   │  │ 标签(灰10粗)    │  │ 标签(灰10粗)    │       │
- *   │  │ 价格(绿27粗)    │  │ 价格(白27粗)    │       │
- *   │  └──────────────┘  └──────────────┘       │
- *   │  ┌─ 价格曲线图（深色底，圆角12）─────────┐   │
- *   │  └───────────────────────────────────────┘   │
- *   └──────────────────────────────────────────────┘
+ *   ▸ GOLD · XAU/USD            ● SYNC
+ *   4152.71 USD/OZ    ▲ +1.20 (+0.03%)
+ *   ┌─ 荧光绿折线图（含时间轴）────────┐
+ *   └────────────────────────────────┘
+ *   AU9999 907.61 | 昨收 4155.3 | HIGH 4154.2 | LOW 4147.3
  */
 object GoldChartWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         provideContent {
             GlanceTheme {
-                CombinedWidgetContent()
+                TerminalWidgetContent()
             }
         }
     }
 }
 
 @Composable
-private fun CombinedWidgetContent() {
+private fun TerminalWidgetContent() {
     val context = androidx.glance.LocalContext.current
     val priceJson = currentState(stringPreferencesKey(GoldPrice.KEY_PRICE))
     val price = GoldPrice.fromJson(priceJson)
+
+    // 闪烁相位：tick 奇偶决定 SYNC 点形态
+    val syncDot = if (price.tick % 2 == 0L) "●" else "○"
 
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
             .background(ColorProvider(GoldColors.CARD_BG))
-            .cornerRadius(22.dp)
-            .padding(horizontal = 20.dp, vertical = 18.dp)
+            .cornerRadius(10.dp)
+            .padding(horizontal = 16.dp, vertical = 12.dp)
             .clickable(actionRunCallback<RefreshAction>())
     ) {
-        // 标题
-        Text(
-            text = "实时黄金价格",
-            style = TextStyle(
-                color = ColorProvider(GoldColors.TITLE_GOLD),
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold
-            )
-        )
-
-        Spacer(GlanceModifier.height(12.dp))
-
-        // 两个价格格，横向并排、等分宽度（defaultWeight 平分可用空间，避免超宽裁剪）
+        // 顶部：品种标签 + 同步状态（闪烁）
         Row(
-            modifier = GlanceModifier.fillMaxWidth()
+            modifier = GlanceModifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            PriceCell(
-                label = "国际金价",
-                price = price.international,
-                priceColor = GoldColors.PRICE_INTL,
-                borderColor = GoldColors.INTL_BORDER
+            Text(
+                text = "▸ GOLD · XAU/USD",
+                style = TextStyle(
+                    color = ColorProvider(GoldColors.TITLE_GOLD),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold
+                )
             )
-            Spacer(GlanceModifier.width(12.dp))
-            PriceCell(
-                label = "国内金价",
-                price = price.domestic,
-                priceColor = GoldColors.PRICE_DOM,
-                borderColor = GoldColors.DOM_BORDER
+            Spacer(GlanceModifier.defaultWeight())
+            Text(
+                text = "$syncDot SYNC",
+                style = TextStyle(
+                    color = ColorProvider(GoldColors.DIM),
+                    fontSize = 9.sp
+                )
             )
         }
 
-        Spacer(GlanceModifier.height(14.dp))
+        Spacer(GlanceModifier.height(8.dp))
 
-        // 曲线图（defaultWeight 撑满剩余高度，避免底部空底）
+        // 国际金价：大字 + 涨跌
+        PriceLine(
+            label = "国际",
+            price = price.international,
+            change = price.internationalChange,
+            percent = price.internationalPercent,
+            unit = "USD/OZ"
+        )
+
+        Spacer(GlanceModifier.height(6.dp))
+
+        // 国内金价：大字 + 涨跌
+        PriceLine(
+            label = "国内",
+            price = price.domestic,
+            change = price.domesticChange,
+            percent = price.domesticPercent,
+            unit = "元/克"
+        )
+
+        Spacer(GlanceModifier.height(8.dp))
+
+        // 折线图（荧光绿，含时间轴）
         val file = GoldRefreshService.chartFilePath(context)
         val bitmap = if (file.exists()) BitmapFactory.decodeFile(file.absolutePath) else null
 
         if (bitmap != null) {
-            Column(
+            Image(
+                provider = ImageProvider(bitmap),
+                contentDescription = "金价走势",
                 modifier = GlanceModifier
                     .fillMaxWidth()
-                    .defaultWeight()
-                    .background(ColorProvider(GoldColors.CHART_BG))
-                    .cornerRadius(12.dp)
-            ) {
-                Image(
-                    provider = ImageProvider(bitmap),
-                    contentDescription = "金价走势",
-                    modifier = GlanceModifier
-                        .fillMaxSize(),
-                    contentScale = ContentScale.Fit
-                )
-            }
+                    .defaultWeight(),
+                contentScale = ContentScale.Fit
+            )
         } else {
             Text(
-                text = "走势图加载中…",
+                text = "…loading",
                 style = TextStyle(
-                    color = ColorProvider(GoldColors.UNIT_GRAY),
+                    color = ColorProvider(GoldColors.DIM),
                     fontSize = 10.sp
                 )
             )
@@ -139,45 +146,69 @@ private fun CombinedWidgetContent() {
 }
 
 @Composable
-private fun androidx.glance.layout.RowScope.PriceCell(
+private fun PriceLine(
     label: String,
     price: Double,
-    priceColor: androidx.compose.ui.graphics.Color,
-    borderColor: androidx.compose.ui.graphics.Color
+    change: Double,
+    percent: Double,
+    unit: String
 ) {
-    Column(
-        modifier = GlanceModifier
-            .defaultWeight()
-            .background(ColorProvider(GoldColors.SUB_BG))
-            .cornerRadius(12.dp)
-            .padding(horizontal = 12.dp, vertical = 12.dp)
+    val rise = change >= 0
+    val accent = if (rise) GoldColors.ACCENT_RED else GoldColors.ACCENT_GREEN
+    val arrow = if (rise) "▲" else "▼"
+
+    Row(
+        modifier = GlanceModifier.fillMaxWidth(),
+        verticalAlignment = Alignment.Bottom
     ) {
+        // 标签
         Text(
             text = label,
             style = TextStyle(
                 color = ColorProvider(GoldColors.PRICE_LABEL),
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold
+                fontSize = 10.sp
             )
         )
-        Spacer(GlanceModifier.height(4.dp))
+        Spacer(GlanceModifier.width(8.dp))
+        // 大字价格
         Text(
             text = formatPrice(price),
             style = TextStyle(
-                color = ColorProvider(priceColor),
-                fontSize = 27.sp,
+                color = ColorProvider(GoldColors.PRICE_INTL),
+                fontSize = 26.sp,
                 fontWeight = FontWeight.Bold
             )
         )
-        // 底部彩色细线（模拟设计稿的彩色边框）
-        Spacer(GlanceModifier.height(6.dp))
-        Spacer(
-            GlanceModifier
-                .fillMaxWidth()
-                .height(2.dp)
-                .background(ColorProvider(borderColor))
+        Spacer(GlanceModifier.width(3.dp))
+        // 单位
+        Text(
+            text = unit,
+            style = TextStyle(
+                color = ColorProvider(GoldColors.DIM),
+                fontSize = 10.sp
+            )
+        )
+        Spacer(GlanceModifier.defaultWeight())
+        // 涨跌
+        Text(
+            text = "$arrow ${formatSigned(change)} (${formatPercent(percent)})",
+            style = TextStyle(
+                color = ColorProvider(accent),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold
+            )
         )
     }
+}
+
+private fun formatSigned(v: Double): String {
+    val sign = if (v >= 0) "+" else ""
+    return sign + String.format("%.2f", v)
+}
+
+private fun formatPercent(v: Double): String {
+    val sign = if (v >= 0) "+" else ""
+    return sign + String.format("%.2f%%", v)
 }
 
 /**

@@ -9,7 +9,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-/** 太空舱科幻配色（金色+琥珀） */
+/** 极客风终端数据仪表配色（GitHub 暗色系） */
 object GoldColors {
     val BG_DARK = Color(0xFF1C1C1E)       // （保留，兼容旧引用）
     val LABEL_GRAY = Color(0xFF8E8E93)
@@ -18,17 +18,20 @@ object GoldColors {
     val RISE_RED = Color(0xFFFF453A)
     val FALL_GREEN = Color(0xFF30D158)
 
-    // 浅色半透明主题（毛玻璃白效果，透明度加大）
-    val CARD_BG = Color(0x80FFFFFF)       // 大底：50% 白，明显透出壁纸
-    val SUB_BG = Color(0x66FFFFFF)        // 价格子格：40% 白
-    val CHART_BG = Color(0x4DFFFFFF)      // 曲线底图：30% 白
-    val GRID = Color(0x33E0C07A)          // 网格线：淡金
-    val TITLE_GOLD = Color(0xFFB8860B)    // 标题金：深琥珀（浅底上用深色）
-    val PRICE_INTL = Color(0xFF007AFF)    // 国际价：iOS蓝（浅底清晰）
-    val PRICE_DOM = Color(0xFF1D1D1F)     // 国内价：深黑
-    val PRICE_LABEL = Color(0xFF8E8E93)   // 价格标签：灰
-    val INTL_BORDER = Color(0xFF007AFF)   // 国际格边框：蓝
-    val DOM_BORDER = Color(0xFFB8860B)    // 国内格边框：金
+    // 极客风终端配色
+    val CARD_BG = Color(0xFF0D1117)       // 卡片底：GitHub 暗色
+    val SUB_BG = Color(0xFF161B22)        // 子区域：略浅
+    val CHART_BG = Color(0x00000000)      // 折线图底：透明（融入卡片）
+    val GRID = Color(0xFF1C2128)          // 网格线：暗灰
+    val TITLE_GOLD = Color(0xFF3FB950)    // 主色：荧光绿
+    val PRICE_INTL = Color(0xFFE6EDF3)    // 主价格：高亮白
+    val PRICE_DOM = Color(0xFFE6EDF3)     // 国内价：高亮白
+    val PRICE_LABEL = Color(0xFF8B949E)   // 次要文字：灰
+    val INTL_BORDER = Color(0xFF3FB950)   // 涨：绿
+    val DOM_BORDER = Color(0xFFF85149)    // 跌：红
+    val ACCENT_GREEN = Color(0xFF3FB950)  // 荧光绿
+    val ACCENT_RED = Color(0xFFF85149)    // 红
+    val DIM = Color(0xFF6E7681)           // 最暗灰
 }
 
 /** 格式化价格 */

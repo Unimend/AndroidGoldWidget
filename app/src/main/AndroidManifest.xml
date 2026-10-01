@@ -16,7 +16,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.GoldWidget">
 
-        <!-- 黄金走势图组件（完整组合组件） -->
+        <!-- 黄金走势图组件（极客风终端仪表） -->
         <receiver
             android:name=".GoldChartWidgetReceiver"
             android:exported="true"
@@ -27,6 +27,19 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/gold_chart_widget_info" />
+        </receiver>
+
+        <!-- 黄金组件（浅色半透明版） -->
+        <receiver
+            android:name=".GoldLightWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_light_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/gold_light_widget_info" />
         </receiver>
 
         <!-- 实时刷新前台服务 -->

@@ -11,28 +11,50 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * 金价折线图绘制器（太空舱科幻风，仿支付宝分时图）。
- * 单条国际金价折线，左侧 Y 轴价格刻度，底部 X 轴时间刻度。
+ * 金价折线图绘制器（极客风终端，仿交易终端分时图）。
+ * 单条国际金价荧光绿折线，左侧 Y 轴价格刻度，底部 X 轴时间刻度。
  * - 右侧预留"未来时间"空白
  * - 曲线末端标注当前价格
  * - 水平虚线标注历史最高价
- * - 当前价为历史新高时高亮（霓虹青）
+ * - 当前价为历史新高时高亮（红）
  */
 object GoldChartRenderer {
 
-    private val LINE_COLOR = Color.parseColor("#E0A000")       // 折线：深金（浅底清晰）
-    private val GRID_COLOR = Color.parseColor("#33D0B070")     // 网格线：淡金
-    private val AXIS_TEXT = Color.parseColor("#B8860B")        // 刻度文字：深琥珀
-    private val X_AXIS_TEXT = Color.parseColor("#8E8E93")      // X 轴时间：灰
-    private val HIGH_LINE_NORMAL = Color.parseColor("#8E8E93") // 最高价线（常态）：灰
-    private val NEW_HIGH = Color.parseColor("#FF3B30")         // 新高态：红
+    // 深色（极客风）配色
+    private val LINE_COLOR = Color.parseColor("#3FB950")       // 折线：荧光绿
+    private val GRID_COLOR = Color.parseColor("#1C2128")       // 网格线：暗灰
+    private val AXIS_TEXT = Color.parseColor("#8B949E")        // 刻度文字：灰
+    private val X_AXIS_TEXT = Color.parseColor("#6E7681")      // X 轴时间：暗灰
+    private val HIGH_LINE_NORMAL = Color.parseColor("#8B949E") // 最高价线（常态）：灰
+    private val NEW_HIGH = Color.parseColor("#F85149")         // 新高态：红
+
+    // 浅色配色
+    private val LINE_COLOR_LIGHT = Color.parseColor("#007AFF") // 折线：iOS蓝
+    private val GRID_COLOR_LIGHT = Color.parseColor("#33D0D0D0") // 网格线：淡灰
+    private val AXIS_TEXT_LIGHT = Color.parseColor("#6B7280")  // 刻度文字：灰
+    private val X_AXIS_TEXT_LIGHT = Color.parseColor("#9CA3AF")// X 轴时间：浅灰
+    private val HIGH_LINE_LIGHT = Color.parseColor("#6B7280")  // 最高价线：灰
+    private val NEW_HIGH_LIGHT = Color.parseColor("#FF3B30")   // 新高态：红
 
     private const val AXIS_WIDTH = 70f     // 左侧 Y 轴区（容纳 24f 数字）
     private const val X_AXIS_HEIGHT = 32f  // 底部 X 轴区（容纳 24f 时间）
     private const val FUTURE_RATIO = 0.16f // 右侧留白（未来时间）比例
     private const val NEW_HIGH_EPS = 0.01  // 浮点容差（判断新高）
 
-    fun render(points: List<GoldHistoryStore.Point>, width: Int, height: Int): Bitmap {
+    fun render(points: List<GoldHistoryStore.Point>, width: Int, height: Int): Bitmap =
+        renderInternal(points, width, height, false)
+
+    fun renderLight(points: List<GoldHistoryStore.Point>, width: Int, height: Int): Bitmap =
+        renderInternal(points, width, height, true)
+
+    private fun renderInternal(points: List<GoldHistoryStore.Point>, width: Int, height: Int, light: Boolean): Bitmap {
+        val lineColor = if (light) LINE_COLOR_LIGHT else LINE_COLOR
+        val gridColor = if (light) GRID_COLOR_LIGHT else GRID_COLOR
+        val axisText = if (light) AXIS_TEXT_LIGHT else AXIS_TEXT
+        val xAxisText = if (light) X_AXIS_TEXT_LIGHT else X_AXIS_TEXT
+        val highLine = if (light) HIGH_LINE_LIGHT else HIGH_LINE_NORMAL
+        val newHigh = if (light) NEW_HIGH_LIGHT else NEW_HIGH
+
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         canvas.drawColor(Color.TRANSPARENT)
@@ -52,7 +74,7 @@ object GoldChartRenderer {
 
         // 网格线（仅横向参考线，去掉竖向包围感）
         val gridPaint = Paint().apply {
-            color = GRID_COLOR
+            color = gridColor
             style = Paint.Style.STROKE
             strokeWidth = 1f
         }
@@ -71,12 +93,12 @@ object GoldChartRenderer {
         val highPrice = max
         val isNewHigh = currentPrice >= highPrice - NEW_HIGH_EPS
 
-        // 强调色：新高用霓虹青，否则用暗琥珀
-        val highlightColor = if (isNewHigh) NEW_HIGH else HIGH_LINE_NORMAL
+        // 强调色：新高用红，否则用灰
+        val highlightColor = if (isNewHigh) newHigh else highLine
 
         // Y 轴刻度（文字左对齐，尽量贴左边缘）
         val axisPaint = Paint().apply {
-            color = AXIS_TEXT
+            color = axisText
             textSize = 24f
             isAntiAlias = true
             textAlign = Paint.Align.LEFT
@@ -120,23 +142,23 @@ object GoldChartRenderer {
         val timeY = height - 3f  // 基线贴近底部
 
         val timePaintStart = Paint().apply {
-            color = X_AXIS_TEXT; textSize = 24f; isAntiAlias = true; textAlign = Paint.Align.LEFT
+            color = xAxisText; textSize = 24f; isAntiAlias = true; textAlign = Paint.Align.LEFT
         }
         canvas.drawText(fmt.format(Date(first)), plotLeft, timeY, timePaintStart)
 
         val timePaintMid = Paint().apply {
-            color = X_AXIS_TEXT; textSize = 24f; isAntiAlias = true; textAlign = Paint.Align.CENTER
+            color = xAxisText; textSize = 24f; isAntiAlias = true; textAlign = Paint.Align.CENTER
         }
         canvas.drawText(fmt.format(Date(mid)), (plotLeft + drawRight) / 2f, timeY, timePaintMid)
 
         val timePaintEnd = Paint().apply {
-            color = X_AXIS_TEXT; textSize = 24f; isAntiAlias = true; textAlign = Paint.Align.RIGHT
+            color = xAxisText; textSize = 24f; isAntiAlias = true; textAlign = Paint.Align.RIGHT
         }
         canvas.drawText(fmt.format(Date(last)), drawRight, timeY, timePaintEnd)
 
-        // 画折线 + 下方填充
+        // 画折线
         val lastX = plotLeft + drawW  // 曲线末端 x 坐标（供当前价标签使用）
-        drawLineWithFill(canvas, values, plotLeft, padTop, drawW, plotH, range, plotBottom)
+        drawLine(canvas, values, plotLeft, padTop, drawW, plotH, range, lineColor)
 
         // 曲线末端当前价标签（圆点 + 数值，新高时高亮）
         val lastY = padTop + plotH * (1f - ((currentPrice - min) / (range ?: 1.0)).toFloat())
@@ -160,7 +182,7 @@ object GoldChartRenderer {
         return bitmap
     }
 
-    private fun drawLineWithFill(
+    private fun drawLine(
         canvas: Canvas,
         values: List<Double>,
         left: Float,
@@ -168,14 +190,14 @@ object GoldChartRenderer {
         plotW: Float,
         plotH: Float,
         range: Double?,
-        bottom: Float
+        lineColor: Int
     ) {
         val min = values.minOrNull() ?: return
         val max = values.maxOrNull() ?: return
         val r = range ?: return
 
         val linePaint = Paint().apply {
-            color = LINE_COLOR
+            color = lineColor
             strokeWidth = 3f
             style = Paint.Style.STROKE
             isAntiAlias = true
