@@ -1,11 +1,11 @@
 # Android Gold Widget
 
-v2.0.0：与 Nothing FM、指南针统一设计的黄金行情桌面组件。
+v2.0.1：与 Nothing FM、指南针统一设计的黄金行情桌面组件。
 
 - 国际 XAU（美元/盎司）与国内 AU9999（人民币/克），并列显示价格和相对昨收的涨跌幅。
 - 黑色版采用纯黑、14dp 圆角、Doto 700 和自适应等比画布；保留浅色版。
 - 3×5 桌面建议放置为 3×2。不同网格以实际宿主尺寸绘制，文字不会非等比拉伸。
-- 亮屏时约每 30 秒请求新浪行情；点击组件立即刷新。熄屏暂停请求，无组件时停止服务。
+- 亮屏时每次刷新完成后等待 5 秒再请求新浪行情；点击组件立即刷新。熄屏暂停请求，无组件时停止服务。实际间隔包含网络耗时，数据源未更新时价格不变。
 - 请求失败保留缓存并显示 STALE。顶部时间为成功抓取时间，不能用来判断市场仍在交易。
 - 图表记录本机采样历史，LOCAL HIGH 仅为缓存范围最高价。
 
@@ -27,7 +27,7 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 ## 架构
 
 - GoldPriceRepository：复用网络客户端、校验报价、解析昨收。
-- GoldRefreshService：30 秒刷新、屏幕状态检查、互斥请求、失败缓存、IO 渲染。
+- GoldRefreshService：约 5 秒刷新、屏幕状态检查、互斥请求、失败缓存、IO 渲染。
 - GoldDashboardRenderer：按宿主比例绘制 Doto 价格、状态和走势图。
 - GoldHistoryStore：有限采样缓存，同价五分钟补点。
 - GoldChartWidget / GoldLightWidget：桌面宿主与点击动作。

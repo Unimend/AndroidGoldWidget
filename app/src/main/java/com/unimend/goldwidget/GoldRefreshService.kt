@@ -23,7 +23,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 /**
- * 前台服务：每 30 秒拉取一次实时金价并更新小组件。
+ * 前台服务：亮屏时每次刷新完成后等待 5 秒，再拉取行情。
  */
 class GoldRefreshService : Service() {
 
@@ -91,7 +91,7 @@ class GoldRefreshService : Service() {
         private const val TAG = "GoldRefreshService"
         const val CHANNEL_ID = "gold_price_channel"
         const val NOTIFICATION_ID = 1001
-        const val REFRESH_INTERVAL_MS = 30_000L
+        const val REFRESH_INTERVAL_MS = 5_000L
         private val refreshMutex = Mutex()
         private val repository = GoldPriceRepository()
         private val priceKey = stringPreferencesKey(GoldPrice.KEY_PRICE)
@@ -173,6 +173,7 @@ class GoldRefreshService : Service() {
             // 触发两个组件的 UI 重建
             GoldChartWidget.updateAll(context)
             GoldLightWidget.updateAll(context)
+            Log.d(TAG, "行情刷新完成：${price.updateTime}")
             true
         }
 

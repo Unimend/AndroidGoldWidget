@@ -36,7 +36,7 @@ object GoldChartRenderer {
     private val HIGH_LINE_LIGHT = Color.parseColor("#6B7280")  // 最高价线：灰
     private val NEW_HIGH_LIGHT = Color.parseColor("#FF3B30")   // 新高态：红
 
-    private const val AXIS_WIDTH = 70f     // 左侧 Y 轴区（容纳 24f 数字）
+    private const val AXIS_WIDTH = 110f    // 左侧 Y 轴区（容纳两位小数）
     private const val X_AXIS_HEIGHT = 32f  // 底部 X 轴区（容纳 24f 时间）
     private const val FUTURE_RATIO = 0.16f // 右侧留白（未来时间）比例
     private const val NEW_HIGH_EPS = 0.01  // 浮点容差（判断新高）
@@ -106,7 +106,7 @@ object GoldChartRenderer {
         for (i in 0..3) {
             val y = padTop + plotH * i / 3f
             val value = max - (range ?: 1.0) * i / 3f
-            canvas.drawText(String.format("%.0f", value), 2f, y + 8f, axisPaint)
+            canvas.drawText(String.format(java.util.Locale.US, "%.2f", value), 2f, y + 8f, axisPaint)
         }
 
         // 历史最高价虚线 + 标签
@@ -120,7 +120,7 @@ object GoldChartRenderer {
         }
         canvas.drawLine(plotLeft, highY, plotRight, highY, highLinePaint)
 
-        // 最高价数值标签（右侧对齐到 plotRight 内侧，避免向右超界被裁）
+        // 最高价标签放在左侧，避开右侧曲线末端的当前价格。
         val highLabel = if (isNewHigh) {
             String.format(Locale.US, "LOCAL HIGH %.1f", highPrice)
         } else {
@@ -130,9 +130,9 @@ object GoldChartRenderer {
             color = highlightColor
             textSize = 20f
             isAntiAlias = true
-            textAlign = Paint.Align.RIGHT  // 右对齐，文字向左延伸，不会超右界
+            textAlign = Paint.Align.LEFT
         }
-        canvas.drawText(highLabel, plotRight - 4f, highY - 4f, highLabelPaint)
+        canvas.drawText(highLabel, plotLeft + 4f, highY - 4f, highLabelPaint)
 
         // X 轴时间刻度（字体加大，往下挪贴底）
         val fmt = SimpleDateFormat("HH:mm", Locale.getDefault())

@@ -3,7 +3,7 @@
 
     <!-- 联网获取实时金价 -->
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- 前台服务，实现 30 秒实时刷新 -->
+    <!-- 前台服务，亮屏时约 5 秒刷新 -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
