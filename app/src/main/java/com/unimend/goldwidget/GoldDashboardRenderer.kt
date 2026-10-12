@@ -46,6 +46,7 @@ object GoldDashboardRenderer {
         val prices = doubleArrayOf(price.international, price.domestic)
         val changes = doubleArrayOf(price.internationalPercent, price.domesticPercent)
         val labels = arrayOf("XAU / USD-OZ", "AU9999 / CNY-G")
+        text("⇄", 450f, 148f, 44f, white, true)
         for (index in 0..1) {
             text(labels[index], centers[index], 92f, 24f, grey, true)
             text(formatPrice(prices[index]), centers[index], 148f, 68f, white, true)
@@ -54,7 +55,7 @@ object GoldDashboardRenderer {
                 if (changes[index] >= 0) red else Color.rgb(95, 175, 125), true)
         }
         val chartTop = 245f
-        val chartHeight = (logicalHeight - chartTop - 175f).toInt()
+        val chartHeight = (logicalHeight - chartTop - 60f).toInt()
         if (chartHeight >= 80) {
             val points = GoldHistoryStore(context).load()
             if (points.size >= 2) {
@@ -69,7 +70,7 @@ object GoldDashboardRenderer {
             }
         }
         text(if (domestic) "AU9999 · CNY/G · LOCAL HISTORY" else "XAU · USD/OZ · LOCAL HISTORY",
-            450f, logicalHeight - 145f, 19f, grey, true)
+            450f, logicalHeight - 24f, 19f, grey, true)
         return bitmap
     }
 }
