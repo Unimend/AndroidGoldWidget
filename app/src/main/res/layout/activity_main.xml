@@ -19,7 +19,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:gravity="center"
-        android:text="实时刷新服务已启动\n\n请返回桌面：\n长按桌面空白处 → 小组件 → 找到「黄金实时价格」\n拖动到桌面即可"
+        android:text="长按桌面空白处 → 小组件 → 黄金走势图\n建议在 3×5 桌面使用 3×2 尺寸\n\n亮屏时约每 30 秒更新，点击组件可刷新\n断网保留缓存并显示 STALE\n添加后返回本应用可恢复后台刷新\n\n曲线是本机采样记录，LOCAL HIGH 是记录内最高价"
         android:textSize="15sp"
         android:lineSpacingExtra="4dp"
         android:textColor="#333333" />

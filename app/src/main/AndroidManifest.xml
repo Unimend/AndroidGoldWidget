@@ -5,6 +5,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- 前台服务，实现 30 秒实时刷新 -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- 开机自启服务 -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />

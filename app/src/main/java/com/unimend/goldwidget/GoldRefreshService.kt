@@ -18,6 +18,9 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * 前台服务：每 30 秒拉取一次实时金价并更新小组件。
@@ -31,6 +34,8 @@ class GoldRefreshService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        getSystemService(android.app.NotificationManager::class.java).createNotificationChannel(
+            android.app.NotificationChannel(CHANNEL_ID, "黄金行情监控", android.app.NotificationManager.IMPORTANCE_LOW))
         startForeground(NOTIFICATION_ID, buildNotification("黄金行情监控中"))
         startRefreshing()
     }
@@ -45,11 +50,21 @@ class GoldRefreshService : Service() {
         refreshJob?.cancel()
         refreshJob = scope.launch {
             while (true) {
+                val manager = android.appwidget.AppWidgetManager.getInstance(this@GoldRefreshService)
+                val hasWidgets = listOf(GoldChartWidgetReceiver::class.java, GoldLightWidgetReceiver::class.java)
+                    .any { manager.getAppWidgetIds(android.content.ComponentName(this@GoldRefreshService, it)).isNotEmpty() }
+                if (!hasWidgets) { stopSelf(); break }
+                if (!getSystemService(android.os.PowerManager::class.java).isInteractive) {
+                    delay(REFRESH_INTERVAL_MS)
+                    continue
+                }
                 try {
                     val success = refreshNow(this@GoldRefreshService)
                     if (!success) {
                         Log.w(TAG, "本次刷新失败，稍后重试")
                     }
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     Log.e(TAG, "刷新异常", e)
                 }
@@ -76,7 +91,9 @@ class GoldRefreshService : Service() {
         private const val TAG = "GoldRefreshService"
         const val CHANNEL_ID = "gold_price_channel"
         const val NOTIFICATION_ID = 1001
-        const val REFRESH_INTERVAL_MS = 1_000L  // 1 秒刷新一次（最接近实时跳动）
+        const val REFRESH_INTERVAL_MS = 30_000L
+        private val refreshMutex = Mutex()
+        private val repository = GoldPriceRepository()
         private val priceKey = stringPreferencesKey(GoldPrice.KEY_PRICE)
 
         /** 判断服务是否正在运行 */
@@ -105,10 +122,22 @@ class GoldRefreshService : Service() {
          * 刷新一次金价并更新所有小组件。
          * @return 是否成功抓到并写入了新数据
          */
-        suspend fun refreshNow(context: Context): Boolean {
-            val price = withContext(Dispatchers.IO) {
-                GoldPriceRepository().fetch()
-            } ?: return false
+        suspend fun refreshNow(context: Context): Boolean = refreshMutex.withLock {
+            val price = repository.fetch()
+            if (price == null) {
+                val manager = GlanceAppWidgetManager(context)
+                listOf(GoldChartWidget::class.java, GoldLightWidget::class.java).forEach { widgetClass ->
+                    manager.getGlanceIds(widgetClass).forEach { id ->
+                        updateAppWidgetState(context, id) { prefs ->
+                            prefs[priceKey] = GoldPrice.fromJson(prefs[priceKey]).copy(refreshFailed = true).toJson()
+                        }
+                    }
+                }
+                GoldChartWidget.updateAll(context)
+                GoldLightWidget.updateAll(context)
+                return@withLock false
+            }
+            withContext(Dispatchers.IO) {
 
             // 追加历史点（折线图数据源）
             val history = GoldHistoryStore(context)
@@ -125,6 +154,9 @@ class GoldRefreshService : Service() {
             saveChartBitmap(context, chartBitmap)
             val lightBitmap = GoldChartRenderer.renderLight(history.load(), CHART_WIDTH, CHART_HEIGHT)
             saveLightChartBitmap(context, lightBitmap)
+            chartBitmap.recycle()
+            lightBitmap.recycle()
+            }
 
             // 更新两个组件的价格 state（tick +1 用于闪烁相位）
             val manager = GlanceAppWidgetManager(context)
@@ -141,12 +173,12 @@ class GoldRefreshService : Service() {
             // 触发两个组件的 UI 重建
             GoldChartWidget.updateAll(context)
             GoldLightWidget.updateAll(context)
-            return true
+            true
         }
 
         // 折线图尺寸（px，宽高比约 4:1，匹配扁形显示区）
-        private const val CHART_WIDTH = 1600
-        private const val CHART_HEIGHT = 400
+        private const val CHART_WIDTH = 1000
+        private const val CHART_HEIGHT = 360
 
         /** 折线图 bitmap 的缓存文件路径 */
         fun chartFilePath(context: Context): java.io.File =

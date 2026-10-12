@@ -42,6 +42,8 @@ class GoldPriceRepository {
                 if (parsed == null) android.util.Log.e("GoldRepo", "解析失败: ${body.take(80)}")
                 parsed
             }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             android.util.Log.e("GoldRepo", "fetch 异常: ${e.javaClass.simpleName}: ${e.message}", e)
             null
@@ -52,14 +54,14 @@ class GoldPriceRepository {
      * 解析新浪返回的 JS 字符串。
      * 示例：var hq_str_hf_XAU="4160.34,4181.87,...";
      */
-    private fun parse(body: String): GoldPrice? {
+    internal fun parse(body: String): GoldPrice? {
         try {
             val international = extract(body, "hq_str_hf_XAU")?.let { fields ->
                 val parts = fields.split(",")
                 if (parts.size < 8) return@let null
                 val current = parts[0].toDouble()
-                val prevClose = parts[1].toDouble().takeIf { it > 0 }
-                    ?: parts[2].toDouble().takeIf { it > 0 } ?: current
+                require(current.isFinite() && current > 0)
+                val prevClose = parts[7].toDouble().takeIf { it.isFinite() && it > 0 } ?: return@let null
                 Triple(current, current - prevClose, (current - prevClose) / prevClose * 100)
             } ?: return null
 
@@ -67,8 +69,8 @@ class GoldPriceRepository {
                 val parts = fields.split(",")
                 if (parts.size < 8) return@let null
                 val current = parts[0].toDouble()
-                val prevClose = parts[1].toDouble().takeIf { it > 0 }
-                    ?: parts[2].toDouble().takeIf { it > 0 } ?: current
+                require(current.isFinite() && current > 0)
+                val prevClose = parts[7].toDouble().takeIf { it.isFinite() && it > 0 } ?: return@let null
                 Triple(current, current - prevClose, (current - prevClose) / prevClose * 100)
             } ?: return null
 
@@ -79,7 +81,8 @@ class GoldPriceRepository {
                 domestic = domestic.first,
                 domesticChange = domestic.second,
                 domesticPercent = domestic.third,
-                updateTime = ""
+                    updateTime = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US).format(java.util.Date()),
+                    receivedAt = System.currentTimeMillis()
             )
         } catch (e: Exception) {
             return null

@@ -27,6 +27,9 @@ class GoldHistoryStore(context: Context) {
      */
     fun append(point: Point, maxPoints: Int = MAX_POINTS) {
         val list = load().toMutableList()
+        val last = list.lastOrNull()
+        if (last != null && last.international == point.international && last.domestic == point.domestic
+            && point.timestamp - last.timestamp < 5 * 60 * 1000L) return
         list.add(point)
         // 裁剪到最多 maxPoints 个
         val trimmed = if (list.size > maxPoints) list.subList(list.size - maxPoints, list.size) else list

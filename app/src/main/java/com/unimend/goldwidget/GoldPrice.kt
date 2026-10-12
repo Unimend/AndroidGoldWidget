@@ -11,7 +11,9 @@ data class GoldPrice(
     val domesticChange: Double,     // 国内金价涨跌额
     val domesticPercent: Double,    // 国内金价涨跌幅 %
     val updateTime: String,         // 数据更新时间
-    val tick: Long = 0L             // 刷新计数（用于闪烁相位，每次刷新 +1）
+    val tick: Long = 0L,
+    val receivedAt: Long = 0L,
+    val refreshFailed: Boolean = false
 ) {
     val isInternationalRise: Boolean get() = internationalChange >= 0
     val isDomesticRise: Boolean get() = domesticChange >= 0
@@ -27,6 +29,8 @@ data class GoldPrice(
             put("domesticPercent", domesticPercent)
             put("updateTime", updateTime)
             put("tick", tick)
+            put("receivedAt", receivedAt)
+            put("refreshFailed", refreshFailed)
         }.toString()
     }
 
@@ -59,7 +63,9 @@ data class GoldPrice(
                     domesticChange = obj.optDouble("domesticChange", 0.0),
                     domesticPercent = obj.optDouble("domesticPercent", 0.0),
                     updateTime = obj.optString("updateTime", "--"),
-                    tick = obj.optLong("tick", 0L)
+                    tick = obj.optLong("tick", 0L),
+                    receivedAt = obj.optLong("receivedAt", 0L),
+                    refreshFailed = obj.optBoolean("refreshFailed", false)
                 )
             } catch (e: Exception) {
                 placeholder()

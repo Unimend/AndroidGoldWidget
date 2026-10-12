@@ -69,13 +69,13 @@ private fun LightWidgetContent() {
         modifier = GlanceModifier
             .fillMaxSize()
             .background(ColorProvider(LIGHT_CARD_BG))
-            .cornerRadius(22.dp)
-            .padding(horizontal = 20.dp, vertical = 18.dp)
+            .cornerRadius(14.dp)
+            .padding(horizontal = 16.dp, vertical = 12.dp)
             .clickable(actionRunCallback<RefreshAction>())
     ) {
         // 标题
         Text(
-            text = "实时黄金价格",
+            text = if (price.refreshFailed) "黄金价格 · 缓存行情" else "黄金价格 · ${price.updateTime}",
             style = TextStyle(
                 color = ColorProvider(LIGHT_TITLE),
                 fontSize = 15.sp,

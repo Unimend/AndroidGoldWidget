@@ -19,11 +19,11 @@ object GoldColors {
     val FALL_GREEN = Color(0xFF30D158)
 
     // 极客风终端配色
-    val CARD_BG = Color(0xFF0D1117)       // 卡片底：GitHub 暗色
+    val CARD_BG = Color(0xFF000000)       // 系列统一纯黑底
     val SUB_BG = Color(0xFF161B22)        // 子区域：略浅
     val CHART_BG = Color(0x00000000)      // 折线图底：透明（融入卡片）
     val GRID = Color(0xFF1C2128)          // 网格线：暗灰
-    val TITLE_GOLD = Color(0xFF3FB950)    // 主色：荧光绿
+    val TITLE_GOLD = Color(0xFFF2F2F7)
     val PRICE_INTL = Color(0xFFE6EDF3)    // 主价格：高亮白
     val PRICE_DOM = Color(0xFFE6EDF3)     // 国内价：高亮白
     val PRICE_LABEL = Color(0xFF8B949E)   // 次要文字：灰
@@ -57,8 +57,6 @@ class RefreshAction : ActionCallback {
         parameters: ActionParameters
     ) {
         // 用独立协程后台刷新，立即返回，不阻塞点击反馈
-        CoroutineScope(Dispatchers.IO).launch {
-            GoldRefreshService.refreshNow(context)
-        }
+        GoldRefreshService.refreshNow(context)
     }
 }

@@ -21,7 +21,7 @@ import java.util.Locale
 object GoldChartRenderer {
 
     // 深色（极客风）配色
-    private val LINE_COLOR = Color.parseColor("#3FB950")       // 折线：荧光绿
+    private val LINE_COLOR = Color.parseColor("#FF2D2D")       // 系列红色
     private val GRID_COLOR = Color.parseColor("#1C2128")       // 网格线：暗灰
     private val AXIS_TEXT = Color.parseColor("#8B949E")        // 刻度文字：灰
     private val X_AXIS_TEXT = Color.parseColor("#6E7681")      // X 轴时间：暗灰
@@ -122,9 +122,9 @@ object GoldChartRenderer {
 
         // 最高价数值标签（右侧对齐到 plotRight 内侧，避免向右超界被裁）
         val highLabel = if (isNewHigh) {
-            String.format(Locale.getDefault(), "%.1f 新高", highPrice)
+            String.format(Locale.US, "LOCAL HIGH %.1f", highPrice)
         } else {
-            String.format(Locale.getDefault(), "%.1f", highPrice)
+            String.format(Locale.US, "LOCAL HIGH %.1f", highPrice)
         }
         val highLabelPaint = Paint().apply {
             color = highlightColor
