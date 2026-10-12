@@ -39,9 +39,11 @@ object GoldDashboardRenderer {
         val status = when {
             price.receivedAt == 0L -> "WAITING"
             price.refreshFailed || System.currentTimeMillis() - price.receivedAt > 120_000L -> "STALE"
-            else -> price.updateTime
+            else -> ""
         }
-        text(status, 740f, 34f, 22f, if (status == "STALE") red else grey)
+        if (status.isNotEmpty()) {
+            text(status, 690f, 34f, 22f, if (status == "STALE") red else grey)
+        }
         val centers = floatArrayOf(235f, 665f)
         val prices = doubleArrayOf(price.international, price.domestic)
         val changes = doubleArrayOf(price.internationalPercent, price.domesticPercent)

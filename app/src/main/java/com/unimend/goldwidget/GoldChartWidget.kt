@@ -1,6 +1,7 @@
 package com.unimend.goldwidget
 
 import android.content.Context
+import android.widget.RemoteViews
 import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -29,6 +30,10 @@ object GoldChartWidget : GlanceAppWidget() {
                 .cornerRadius(14.dp), contentAlignment = Alignment.TopCenter) {
                 Image(ImageProvider(bitmap), "国际与国内黄金价格及本地采样走势",
                     modifier = GlanceModifier.fillMaxSize().clickable(actionRunCallback<RefreshAction>()), contentScale = ContentScale.Fit)
+                AndroidRemoteViews(
+                    RemoteViews(context.packageName, R.layout.gold_live_clock),
+                    modifier = GlanceModifier.fillMaxSize()
+                )
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Spacer(GlanceModifier.height((148f * size.width.value / 900f - 24f).coerceAtLeast(0f).dp))
                     Row(modifier = GlanceModifier.width(48.dp).height(48.dp)

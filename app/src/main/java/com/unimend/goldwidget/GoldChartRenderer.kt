@@ -27,6 +27,7 @@ object GoldChartRenderer {
     private val X_AXIS_TEXT = Color.parseColor("#6E7681")      // X 轴时间：暗灰
     private val HIGH_LINE_NORMAL = Color.parseColor("#8B949E") // 最高价线（常态）：灰
     private val NEW_HIGH = Color.parseColor("#F85149")         // 新高态：红
+    private val FALLING = Color.parseColor("#5FAF7D")          // 相邻报价下降：绿
 
     // 浅色配色
     private val LINE_COLOR_LIGHT = Color.parseColor("#007AFF") // 折线：iOS蓝
@@ -94,11 +95,17 @@ object GoldChartRenderer {
         val range = (max - min).takeIf { it > 0.0001 } ?: (max * 0.0001f).toDouble().takeIf { it > 0 }
 
         val currentPrice = values.last()
+        val previousPrice = values[values.lastIndex - 1]
         val highPrice = max
         val isNewHigh = currentPrice >= highPrice - NEW_HIGH_EPS
 
         // 强调色：新高用红，否则用灰
         val highlightColor = if (isNewHigh) newHigh else highLine
+        val directionColor = when (goldPriceDirection(previousPrice, currentPrice, NEW_HIGH_EPS)) {
+            GoldPriceDirection.RISING -> newHigh
+            GoldPriceDirection.FALLING -> FALLING
+            GoldPriceDirection.FLAT -> highLine
+        }
 
         // Y 轴刻度（文字左对齐，尽量贴左边缘）
         val axisPaint = Paint().apply {
@@ -167,14 +174,14 @@ object GoldChartRenderer {
         // 曲线末端当前价标签（圆点 + 数值，新高时高亮）
         val lastY = padTop + plotH * (1f - ((currentPrice - min) / (range ?: 1.0)).toFloat())
         val dotPaint = Paint().apply {
-            color = highlightColor
+            color = directionColor
             style = Paint.Style.FILL
             isAntiAlias = true
         }
         canvas.drawCircle(lastX, lastY, 5f, dotPaint)
 
         val currentLabelPaint = Paint().apply {
-            color = highlightColor
+            color = directionColor
             textSize = 22f
             isAntiAlias = true
             textAlign = Paint.Align.LEFT
@@ -203,7 +210,6 @@ object GoldChartRenderer {
         lineColor: Int
     ) {
         val min = values.minOrNull() ?: return
-        val max = values.maxOrNull() ?: return
         val r = range ?: return
 
         val linePaint = Paint().apply {
