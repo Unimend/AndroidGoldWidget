@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.glance.GlanceId
 import androidx.glance.action.ActionParameters
 import androidx.glance.appwidget.action.ActionCallback
+import androidx.glance.appwidget.state.updateAppWidgetState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -56,7 +57,17 @@ class RefreshAction : ActionCallback {
         glanceId: GlanceId,
         parameters: ActionParameters
     ) {
-        // 用独立协程后台刷新，立即返回，不阻塞点击反馈
+        // 回调生命周期内完成刷新，周期任务与手动请求共享互斥锁。
         GoldRefreshService.refreshNow(context)
+    }
+}
+
+/** 只切换本组件的曲线，不请求网络，不改变其他组件。 */
+class ToggleChartAction : ActionCallback {
+    override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
+        updateAppWidgetState(context, glanceId) { prefs ->
+            prefs[GoldChartWidget.domesticKey] = !(prefs[GoldChartWidget.domesticKey] ?: false)
+        }
+        GoldChartWidget.update(context, glanceId)
     }
 }

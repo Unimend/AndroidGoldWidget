@@ -12,7 +12,7 @@ import java.util.Locale
 
 /**
  * 金价折线图绘制器（极客风终端，仿交易终端分时图）。
- * 单条国际金价荧光绿折线，左侧 Y 轴价格刻度，底部 X 轴时间刻度。
+ * 国际 / 国内金价单条曲线，左侧 Y 轴价格刻度，底部 X 轴时间刻度。
  * - 右侧预留"未来时间"空白
  * - 曲线末端标注当前价格
  * - 水平虚线标注历史最高价
@@ -41,13 +41,15 @@ object GoldChartRenderer {
     private const val FUTURE_RATIO = 0.16f // 右侧留白（未来时间）比例
     private const val NEW_HIGH_EPS = 0.01  // 浮点容差（判断新高）
 
-    fun render(points: List<GoldHistoryStore.Point>, width: Int, height: Int): Bitmap =
-        renderInternal(points, width, height, false)
+    fun render(points: List<GoldHistoryStore.Point>, width: Int, height: Int,
+               domestic: Boolean = false, scale: Float = 1f): Bitmap =
+        renderInternal(points, width, height, false, domestic, scale)
 
     fun renderLight(points: List<GoldHistoryStore.Point>, width: Int, height: Int): Bitmap =
         renderInternal(points, width, height, true)
 
-    private fun renderInternal(points: List<GoldHistoryStore.Point>, width: Int, height: Int, light: Boolean): Bitmap {
+    private fun renderInternal(points: List<GoldHistoryStore.Point>, width: Int, height: Int,
+                               light: Boolean, domestic: Boolean = false, scale: Float = 1f): Bitmap {
         val lineColor = if (light) LINE_COLOR_LIGHT else LINE_COLOR
         val gridColor = if (light) GRID_COLOR_LIGHT else GRID_COLOR
         val axisText = if (light) AXIS_TEXT_LIGHT else AXIS_TEXT
@@ -56,15 +58,17 @@ object GoldChartRenderer {
         val newHigh = if (light) NEW_HIGH_LIGHT else NEW_HIGH
 
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        bitmap.density = Bitmap.DENSITY_NONE
         val canvas = Canvas(bitmap)
+        canvas.scale(scale, scale)
         canvas.drawColor(Color.TRANSPARENT)
 
         if (points.size < 2) return bitmap
 
-        val padTop = 24f          // 顶部留白（容纳最高价标签）
+        val padTop = 38f          // 独立标签区，虚线不能穿过标签
         val plotLeft = AXIS_WIDTH
-        val plotRight = width - 6f
-        val plotBottom = height - X_AXIS_HEIGHT
+        val plotRight = width / scale - 6f
+        val plotBottom = height / scale - X_AXIS_HEIGHT
         val plotW = plotRight - plotLeft
         val plotH = plotBottom - padTop
 
@@ -84,7 +88,7 @@ object GoldChartRenderer {
         }
 
         // 提取国际金价序列
-        val values = points.map { it.international }
+        val values = points.map { if (domestic) it.domestic else it.international }
         val min = values.minOrNull() ?: return bitmap
         val max = values.maxOrNull() ?: return bitmap
         val range = (max - min).takeIf { it > 0.0001 } ?: (max * 0.0001f).toDouble().takeIf { it > 0 }
@@ -132,14 +136,14 @@ object GoldChartRenderer {
             isAntiAlias = true
             textAlign = Paint.Align.LEFT
         }
-        canvas.drawText(highLabel, plotLeft + 4f, highY - 4f, highLabelPaint)
+        canvas.drawText(highLabel, plotLeft + 4f, 23f, highLabelPaint)
 
         // X 轴时间刻度（字体加大，往下挪贴底）
         val fmt = SimpleDateFormat("HH:mm", Locale.getDefault())
         val first = points.first().timestamp
         val last = points.last().timestamp
         val mid = points[points.size / 2].timestamp
-        val timeY = height - 3f  // 基线贴近底部
+        val timeY = height / scale - 3f
 
         val timePaintStart = Paint().apply {
             color = xAxisText; textSize = 24f; isAntiAlias = true; textAlign = Paint.Align.LEFT
@@ -177,7 +181,13 @@ object GoldChartRenderer {
             style = Paint.Style.FILL
         }
         val currentLabel = String.format(Locale.getDefault(), "%.1f", currentPrice)
-        canvas.drawText(currentLabel, lastX + 8f, lastY + 7f, currentLabelPaint)
+        // 文字使用不透明底，留在虚线下方或上方，避免线条穿字。
+        val labelBaseline = if (kotlin.math.abs(lastY - highY) < 28f) lastY + 28f else lastY + 7f
+        val labelX = lastX + 8f
+        val backgroundPaint = Paint().apply { color = if (light) Color.WHITE else Color.BLACK }
+        canvas.drawRect(labelX - 3f, labelBaseline - 23f,
+            labelX + currentLabelPaint.measureText(currentLabel) + 3f, labelBaseline + 5f, backgroundPaint)
+        canvas.drawText(currentLabel, labelX, labelBaseline, currentLabelPaint)
 
         return bitmap
     }
